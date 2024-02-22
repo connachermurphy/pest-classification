@@ -11,8 +11,10 @@ matplotlib = "*"
 pandas = "*"
 pyarrow = "*"
 appnope = "*"
-torch = "*"
 albumentations = "*"
+torchvision = "*"
+torchaudio = "*"
+torch = "*"
 
 [dev-packages]
 
