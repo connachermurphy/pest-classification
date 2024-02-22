@@ -10,6 +10,9 @@ opencv-python = "*"
 matplotlib = "*"
 pandas = "*"
 pyarrow = "*"
+appnope = "*"
+torch = "*"
+albumentations = "*"
 
 [dev-packages]
 
