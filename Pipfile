@@ -15,6 +15,11 @@ albumentations = "*"
 torchvision = "*"
 torchaudio = "*"
 torch = "*"
+timm = "*"
+tqdm = "*"
+scikit-learn = "*"
+iprogress = "*"
+ipywidgets = "*"
 
 [dev-packages]
 
