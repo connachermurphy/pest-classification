@@ -6,7 +6,7 @@ import os
 import pandas as pd
 from sklearn.metrics import accuracy_score
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from tqdm import tqdm
 # from types import SimpleNamespace
 # config = SimpleNamespace(**{})
@@ -145,27 +145,34 @@ def validate_epoch(dataloader, model, config):
     model.eval()
 
     epoch_loss_long = []
-    epoch_accuracy_long = []
+    epoch_labels_long = []
+    epoch_output_long = []
 
     with torch.no_grad():
         for i, (images, labels) in tqdm(enumerate(dataloader), total=len(dataloader)):
             images = images.to(config.device)
             labels = labels.to(config.device)
+            epoch_labels_long.extend(labels.detach().cpu().numpy().tolist())
 
             # Forward pass
             outputs = model(images)
-            labels_pred = torch.argmax(outputs, dim=1)
+            epoch_output_long.extend(outputs.detach().cpu().numpy().tolist())
 
             # Calculate loss
             loss = config.criterion(outputs, labels)
             epoch_loss_long.append(loss.item())
 
-            # Update accuracy
-            # CM: move to outer loop to accomodate other metrics (just gather predictions here)
-            accuracy = accuracy_score(labels, labels_pred)
-            epoch_accuracy_long.append(accuracy)
-
     epoch_loss = np.mean(epoch_loss_long)
-    epoch_accuracy = np.mean(epoch_accuracy_long)
+
+    epoch_labels_pred_long = np.argmax(epoch_output_long, axis=1)
+    epoch_accuracy = calculate_metric(epoch_labels_long, epoch_labels_pred_long)
+
+    # Update accuracy
+    # CM: move to outer loop to accomodate other metrics (just gather predictions here)
+    # accuracy = accuracy_score(labels, labels_pred)
+    # epoch_accuracy_long.append(accuracy)
+
+    # labels_pred = torch.argmax(outputs, dim=1)
+    # epoch_accuracy = np.mean(epoch_accuracy_long)
 
     return epoch_loss, epoch_accuracy
