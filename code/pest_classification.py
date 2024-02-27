@@ -5,6 +5,7 @@ import numpy as np
 import os
 import pandas as pd
 from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import LabelEncoder
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -47,8 +48,8 @@ for crop in crops:
 df = pd.DataFrame(
     data, columns=["crop", "set", "crop_description", "file"]
 )  # convert to pandas
-df["label"] = df["crop_description"].apply(lambda x: 1 if x == "Healthy" else 0)
-
+df["label_healthy"] = df["crop_description"].apply(lambda x: 1 if x == "Healthy" else 0)
+df["label"] = LabelEncoder().fit_transform(df["crop_description"])
 
 # Define dataset class
 class AugmentedCCMT(Dataset):
@@ -106,35 +107,37 @@ def train_epoch(dataloader, model, optimizer, config):
     model.train()
 
     epoch_loss_long = []
-    epoch_accuracy_long = []
+    epoch_labels_long = []
+    epoch_output_long = []
 
     for i, (images, labels) in tqdm(enumerate(dataloader), total=len(dataloader)):
         images = images.to(config.device)
         labels = labels.to(config.device)
+        epoch_labels_long.extend(labels.detach().cpu().numpy().tolist())
 
         # Zero gradient
         optimizer.zero_grad()
 
-        # Forward pass
-        outputs = model(images)
-        labels_pred = torch.argmax(outputs, dim=1)
+        # Enable gradients (for the avoidance of doubt)
+        with torch.set_grad_enabled(True):
+            # Forward pass
+            outputs = model(images)
+            epoch_output_long.extend(outputs.detach().cpu().numpy().tolist())
 
-        # Calculate loss
-        loss = config.criterion(outputs, labels)
-        epoch_loss_long.append(loss.item())
+            # Calculate loss
+            loss = config.criterion(outputs, labels)
+            epoch_loss_long.append(loss.item())
 
-        # Backpropogation
-        loss.backward()
+            # Backpropogation
+            loss.backward()
 
-        # Update weights
-        optimizer.step()
-
-        # Update accuracy
-        accuracy = accuracy_score(labels, labels_pred)
-        epoch_accuracy_long.append(accuracy)
+            # Update weights
+            optimizer.step()
 
     epoch_loss = np.mean(epoch_loss_long)
-    epoch_accuracy = np.mean(epoch_accuracy_long)
+    
+    epoch_labels_pred_long = np.argmax(epoch_output_long, axis=1)
+    epoch_accuracy = calculate_metric(epoch_labels_long, epoch_labels_pred_long)
 
     return epoch_loss, epoch_accuracy
 
@@ -166,13 +169,5 @@ def validate_epoch(dataloader, model, config):
 
     epoch_labels_pred_long = np.argmax(epoch_output_long, axis=1)
     epoch_accuracy = calculate_metric(epoch_labels_long, epoch_labels_pred_long)
-
-    # Update accuracy
-    # CM: move to outer loop to accomodate other metrics (just gather predictions here)
-    # accuracy = accuracy_score(labels, labels_pred)
-    # epoch_accuracy_long.append(accuracy)
-
-    # labels_pred = torch.argmax(outputs, dim=1)
-    # epoch_accuracy = np.mean(epoch_accuracy_long)
 
     return epoch_loss, epoch_accuracy
