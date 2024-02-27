@@ -139,7 +139,7 @@ def train_epoch(dataloader, model, optimizer, config):
     epoch_labels_pred_long = np.argmax(epoch_output_long, axis=1)
     epoch_accuracy = calculate_metric(epoch_labels_long, epoch_labels_pred_long)
 
-    return epoch_loss, epoch_accuracy
+    return model, epoch_loss, epoch_accuracy
 
 
 # Validation step of a single epoch
