@@ -51,6 +51,7 @@ df = pd.DataFrame(
 df["label_healthy"] = df["crop_description"].apply(lambda x: 1 if x == "Healthy" else 0)
 df["label"] = LabelEncoder().fit_transform(df["crop_description"])
 
+
 # Define dataset class
 class AugmentedCCMT(Dataset):
     def __init__(self, config, df, transform=None, mode="val"):
@@ -135,11 +136,19 @@ def train_epoch(dataloader, model, optimizer, config):
             optimizer.step()
 
     epoch_loss = np.mean(epoch_loss_long)
-    
+
     epoch_labels_pred_long = np.argmax(epoch_output_long, axis=1)
     epoch_accuracy = calculate_metric(epoch_labels_long, epoch_labels_pred_long)
 
-    return model, epoch_loss, epoch_accuracy
+    unique_labels = np.union1d(epoch_labels_long, epoch_labels_pred_long)
+
+    tab = np.zeros((len(unique_labels), len(unique_labels)))
+
+    for i in unique_labels:
+        for j in unique_labels:
+            tab[i, j] = np.sum((epoch_labels_long == i) & (epoch_labels_pred_long == j))
+
+    return model, epoch_loss, epoch_accuracy, tab
 
 
 # Validation step of a single epoch
@@ -170,4 +179,12 @@ def validate_epoch(dataloader, model, config):
     epoch_labels_pred_long = np.argmax(epoch_output_long, axis=1)
     epoch_accuracy = calculate_metric(epoch_labels_long, epoch_labels_pred_long)
 
-    return epoch_loss, epoch_accuracy
+    unique_labels = np.union1d(epoch_labels_long, epoch_labels_pred_long)
+
+    tab = np.zeros((len(unique_labels), len(unique_labels)))
+
+    for i in unique_labels:
+        for j in unique_labels:
+            tab[i, j] = np.sum((epoch_labels_long == i) & (epoch_labels_pred_long == j))
+
+    return epoch_loss, epoch_accuracy, tab

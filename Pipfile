@@ -20,6 +20,11 @@ tqdm = "*"
 scikit-learn = "*"
 iprogress = "*"
 ipywidgets = "*"
+onnx = "*"
+onnx-tf = "*"
+tensorflow-probability = "*"
+tf2onnx = "*"
+tensorflow = "==2.13"
 
 [dev-packages]
 
