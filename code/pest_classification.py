@@ -19,17 +19,16 @@ path = os.path.expanduser("~/data/ccmt/CCMT Dataset-Augmented")
 # Collect file paths in a dataframe
 crops = ["Maize"]  # just maize for now
 
-crop_descriptions = {}
 data = []
 
 for crop in crops:
     # Loop through crop-specific classes
-    crop_descriptions[crop] = os.listdir(os.path.join(path, crop, "train_set"))
+    crop_descriptions_temp = os.listdir(os.path.join(path, crop, "train_set"))
 
-    if ".DS_Store" in crop_descriptions[crop]:
-        crop_descriptions[crop].remove(".DS_Store")
+    if ".DS_Store" in crop_descriptions_temp:
+        crop_descriptions_temp.remove(".DS_Store")
 
-    for crop_class in crop_descriptions[crop]:
+    for crop_class in crop_descriptions_temp:
         # Loop through images in each class
         for set in ["train_set", "test_set"]:
             for roots, dirs, files in os.walk(
@@ -48,9 +47,20 @@ for crop in crops:
 df = pd.DataFrame(
     data, columns=["crop", "set", "crop_description", "file"]
 )  # convert to pandas
-df["label_healthy"] = df["crop_description"].apply(lambda x: 1 if x == "Healthy" else 0)
+# df["label_healthy"] = df["crop_description"].apply(lambda x: 1 if x == "Healthy" else 0)
+
 df["label"] = LabelEncoder().fit_transform(df["crop_description"])
 
+# Create label dictionary
+crop_descriptions = {}  # initialize dictionary
+for crop in crops:
+    crop_descriptions[crop] = {}
+    unique_pairs = df[["crop_description", "label"]].drop_duplicates()
+
+    # Loop over the rows of the DataFrame
+    for _, row in unique_pairs.iterrows():
+        # Add the pair to the dictionary
+        crop_descriptions[crop][row["label"]] = row["crop_description"]
 
 # Define dataset class
 class AugmentedCCMT(Dataset):
