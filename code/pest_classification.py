@@ -1,20 +1,22 @@
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
-import cv2
+# import albumentations as A
+# from albumentations.pytorch import ToTensorV2
+# import cv2
 import numpy as np
 import os
 import pandas as pd
+from PIL import Image
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 import torch
 from torch.utils.data import Dataset
+from torchvision import transforms
 from tqdm import tqdm
 # from types import SimpleNamespace
 # config = SimpleNamespace(**{})
 
 
 # CCMT path
-path = os.path.expanduser("~/data/ccmt/CCMT Dataset-Augmented")
+path = os.path.expanduser("~/data/ccmt_proc_240311")
 
 # Collect file paths in a dataframe
 crops = ["Maize"]  # just maize for now
@@ -23,14 +25,14 @@ data = []
 
 for crop in crops:
     # Loop through crop-specific classes
-    crop_descriptions_temp = os.listdir(os.path.join(path, crop, "train_set"))
+    crop_descriptions_temp = os.listdir(os.path.join(path, crop, "train"))
 
     if ".DS_Store" in crop_descriptions_temp:
         crop_descriptions_temp.remove(".DS_Store")
 
     for crop_class in crop_descriptions_temp:
         # Loop through images in each class
-        for set in ["train_set", "test_set"]:
+        for set in ["train", "test"]:
             for roots, dirs, files in os.walk(
                 os.path.join(path, crop, set, crop_class)
             ):
@@ -62,11 +64,13 @@ for crop in crops:
         # Add the pair to the dictionary
         crop_descriptions[crop][row["label"]] = row["crop_description"]
 
+
 # Define dataset class
 class AugmentedCCMT(Dataset):
     def __init__(self, config, df, transform=None, mode="val"):
         # Set attributes
-        self.image_dir = config.image_dir
+        # self.image_dir = config.image_dir
+        self.image_dir = path
         self.df = df
         self.files = df["file"].values
         self.labels = df["label"].values
@@ -75,10 +79,14 @@ class AugmentedCCMT(Dataset):
         if transform:
             self.transform = transform
         else:
-            self.transform = A.Compose(
+            self.transform = transforms.Compose(
                 [
-                    A.Resize(config.image_size, config.image_size),
-                    ToTensorV2(),
+                    transforms.Resize(256),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    ),
                 ]
             )
 
@@ -90,20 +98,32 @@ class AugmentedCCMT(Dataset):
         label = self.labels[idx]
         file_path = os.path.join(self.image_dir, self.files[idx])
 
-        # Read image at file_path with OpenCV
-        image = cv2.imread(file_path)
+        try:
+            # Read image at file_path with PIL
+            image = Image.open(file_path)
 
-        # Convert to RGB color space
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-        # Apply transformations
-        augmented = self.transform(image=image)
-        image = augmented["image"]
-
-        # Normalize to unit interval
-        image = image / 255
+            # Apply transformations
+            image = self.transform(image)
+            # image = augmented["image"]
+        # Your existing code here
+        except Exception as e:
+            print(f"Error loading image at index {idx} for {label}; {e}; {file_path}")
+            raise
 
         return image, label
+
+
+# Add gaussian blur?
+transform_train = transforms.Compose(
+    [
+        transforms.Resize(256),
+        transforms.RandomCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(45),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ]
+)
 
 
 # Define metric
