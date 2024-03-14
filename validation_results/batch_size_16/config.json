@@ -1,0 +1,1 @@
+{"seed": 123, "num_epochs": 50, "n_folds": 5, "lr": 0.0001, "batch_size": 16, "name": "batch_size_16"}

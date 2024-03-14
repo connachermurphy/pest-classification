@@ -1,6 +1,6 @@
 # Cross-validation experiments and training runs
-validation_results/*
-training_results/*
+code/validation_results/*
+code/training_results/*
 
 # Model artifacts
 *.pth
