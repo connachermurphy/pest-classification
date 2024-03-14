@@ -25,6 +25,7 @@ onnx-tf = "*"
 tensorflow-probability = "*"
 tf2onnx = "*"
 tensorflow = "==2.13"
+memory-profiler = "*"
 
 [dev-packages]
 

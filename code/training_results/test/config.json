@@ -1,0 +1,1 @@
+{"name": "test", "seed": 123, "batch_size": 128, "num_epochs": 1, "lr": 0.0001}

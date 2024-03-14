@@ -3,11 +3,14 @@
 # import cv2
 import numpy as np
 import os
+# from memory_profiler import profile
 import pandas as pd
 from PIL import Image
+import random
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 import torch
+from torch.utils.checkpoint import checkpoint
 from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm import tqdm
@@ -133,6 +136,7 @@ def calculate_metric(y, y_pred):
 
 
 # Training step of a single epoch
+# @profile
 def train_epoch(dataloader, model, optimizer, config):
     # Training mode
     model.train()
@@ -152,7 +156,8 @@ def train_epoch(dataloader, model, optimizer, config):
         # Enable gradients (for the avoidance of doubt)
         with torch.set_grad_enabled(True):
             # Forward pass
-            outputs = model(images)
+            # outputs = model(images)
+            outputs = checkpoint(model, images, use_reentrant=False)
             epoch_output_long.extend(outputs.detach().cpu().numpy().tolist())
 
             # Calculate loss
@@ -182,6 +187,7 @@ def train_epoch(dataloader, model, optimizer, config):
 
 
 # Validation step of a single epoch
+# @profile
 def validate_epoch(dataloader, model, config):
     # Evaluation mode
     model.eval()
@@ -218,3 +224,24 @@ def validate_epoch(dataloader, model, config):
             tab[i, j] = np.sum((epoch_labels_long == i) & (epoch_labels_pred_long == j))
 
     return epoch_loss, epoch_accuracy, tab
+
+
+def set_seed(seed=1234):
+    random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    np.random.seed(seed)
+    
+    # PyTorch seed
+    torch.manual_seed(seed)
+    
+    # CUDA 1 GPU seed
+    torch.cuda.manual_seed(seed)
+    
+    # CUDA multi-GPU seed
+    torch.cuda.manual_seed_all(seed)
+    
+    # Force deterministic operations in cudnn
+    torch.backends.cudnn.deterministic = True 
+    
+    # Disable cudnn auto-tuner
+    torch.backends.cudnn.benchmark = False

@@ -1,3 +1,10 @@
+# Cross-validation experiments and training runs
+validation_results/*
+training_results/*
+
+# Model artifacts
+*.pth
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
