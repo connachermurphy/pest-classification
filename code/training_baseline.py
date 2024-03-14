@@ -1,4 +1,4 @@
-import training as train
+import tools.training as train
 
 from types import SimpleNamespace
 
