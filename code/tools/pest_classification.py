@@ -19,7 +19,7 @@ from tqdm import tqdm
 
 
 # CCMT path
-path = os.path.expanduser("~/data/ccmt_proc_240311")
+path = os.path.expanduser("~/data/ccmt_proc_240318")
 
 # Collect file paths in a dataframe
 crops = ["Maize"]  # just maize for now
