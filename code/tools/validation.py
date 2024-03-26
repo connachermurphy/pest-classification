@@ -162,10 +162,10 @@ def cross_validation(config):
         ) = validate(train_dataloader, valid_dataloader, model, optimizer, config, fold)
 
         # Save loss and accuracy histories
-        np.savetxt(os.path.join(path_out, "train_loss_history.txt"), train_loss_history, delimiter=",")
-        np.savetxt(os.path.join(path_out, "train_accuracy_history.txt"), train_accuracy_history, delimiter=",")
-        np.savetxt(os.path.join(path_out, "valid_loss_history.txt"), valid_loss_history, delimiter=",")
-        np.savetxt(os.path.join(path_out, "valid_accuracy_history.txt"), valid_accuracy_history, delimiter=",")
+        np.savetxt(os.path.join(path_out, f"fold_{fold}_train_loss_history.txt"), train_loss_history, delimiter=",")
+        np.savetxt(os.path.join(path_out, f"fold_{fold}_train_accuracy_history.txt"), train_accuracy_history, delimiter=",")
+        np.savetxt(os.path.join(path_out, f"fold_{fold}_valid_loss_history.txt"), valid_loss_history, delimiter=",")
+        np.savetxt(os.path.join(path_out, f"fold_{fold}_valid_accuracy_history.txt"), valid_accuracy_history, delimiter=",")
 
         # plt.plot(train_loss_history, label="Training")
         # plt.plot(valid_loss_history, label="Validation")
@@ -191,6 +191,28 @@ def cross_validation(config):
     end_all = time.time()
     elapsed_all = (end_all - start_all) / 60
     print("Experiment completed in {:,.0f} minutes".format(elapsed_all))
+
+
+def summarize(name):
+    """
+    Summarize results from cross-validation experiment
+    """
+
+    # Output path
+    path_out = os.path.join(path, name)
+
+    # Abort if directory does not exist
+    if not os.path.isdir(path_out):
+        print("Directory does not exist, aborting")
+        return
+    
+    # Load configuration
+    with open(os.path.join(path_out, "config.json"), "r") as json_file:
+        config_dict = json.load(json_file)
+
+    # Load loss and accuracy histories
+    print(config_dict)
+
 
 if __name__ == "__main__":
     """
