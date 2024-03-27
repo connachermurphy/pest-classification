@@ -2,7 +2,7 @@
 import tools.pest_classification as pest
 
 import json
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 # from memory_profiler import profile
 import numpy as np
 import os
@@ -210,8 +210,68 @@ def summarize(name):
     with open(os.path.join(path_out, "config.json"), "r") as json_file:
         config_dict = json.load(json_file)
 
-    # Load loss and accuracy histories
-    print(config_dict)
+    # Initialize history plots
+    fig_all, ax_all = plt.subplots(2, 2, figsize=(10, 10))
+    ax_all[0, 0].set_title("Training loss")
+    ax_all[0, 0].set_xlabel("Epoch")
+    ax_all[0, 0].set_ylabel("Loss")
+    ax_all[0, 1].set_title("Training accuracy")
+    ax_all[0, 1].set_xlabel("Epoch")
+    ax_all[0, 1].set_ylabel("Accuracy")
+    ax_all[1, 0].set_title("Validation loss")
+    ax_all[1, 0].set_xlabel("Epoch")
+    ax_all[1, 0].set_ylabel("Loss")
+    ax_all[1, 1].set_title("Validation accuracy")
+    ax_all[1, 1].set_xlabel("Epoch")
+    ax_all[1, 1].set_ylabel("Accuracy")
+
+    fig_avg, ax_avg = plt.subplots(1, 2, figsize=(10, 5))
+    ax_avg[0].set_title("Loss")
+    ax_avg[0].set_xlabel("Epoch")
+    ax_avg[0].set_ylabel("Loss")
+    ax_avg[1].set_title("Accuracy")
+    ax_avg[1].set_xlabel("Epoch")
+    ax_avg[1].set_ylabel("Accuracy")
+    
+    # Process loss and accuracy histories
+    k = 0
+
+    for sample in ["train", "valid"]:
+        for stat in ["loss", "accuracy"]:
+            k_1 = k // 2
+            k_2 = k % 2
+            k += 1
+
+            avg = []
+
+            for fold in range(config_dict["n_folds"]):
+                with open(os.path.join(path_out, f"fold_{fold}_{sample}_{stat}_history.txt"), "r") as file:
+                    history = np.loadtxt(file, delimiter=",")
+
+                # Plot loss and accuracy histories
+                ax_all[k_1, k_2].plot(history, label=f"Fold {fold}")
+                avg.append(history)
+    
+            ax_all[k_1, k_2].legend()
+
+            avg = np.mean(avg, axis=0)
+            ax_avg[k_2].plot(avg, label=f"{sample.capitalize()}")
+            ax_avg[k_2].legend()
+
+    # Save figures
+    fig_all.tight_layout()
+    fig_all.savefig(os.path.join(path_out, "all_history.png"))
+    fig_avg.tight_layout()
+    fig_avg.savefig(os.path.join(path_out, "avg_history.png"))
+
+    # Load tabulations
+    for sample in ["train", "valid"]:
+        for stat in ["loss", "accuracy"]:
+            for fold in range(config_dict["n_folds"]):
+                with open(os.path.join(path_out, f"fold_{fold}_epoch_{config_dict['num_epochs'] - 1}_tab_{sample}.txt"), "r") as file:
+                    tab = np.loadtxt(file, delimiter=",")
+
+                    print(tab)
 
 
 if __name__ == "__main__":

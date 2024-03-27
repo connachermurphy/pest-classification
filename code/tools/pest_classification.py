@@ -17,6 +17,7 @@ from tqdm import tqdm
 # from types import SimpleNamespace
 # config = SimpleNamespace(**{})
 
+# CM: add a tabulation function
 
 # CCMT path
 path = os.path.expanduser("~/data/ccmt_proc_240318")
@@ -116,7 +117,7 @@ class AugmentedCCMT(Dataset):
         return image, label
 
 
-# Add gaussian blur?
+# CM: add gaussian blur?
 transform_train = transforms.Compose(
     [
         transforms.Resize(256),
@@ -181,7 +182,7 @@ def train_epoch(dataloader, model, optimizer, config):
 
     for i in unique_labels:
         for j in unique_labels:
-            tab[i, j] = np.sum((epoch_labels_long == i) & (epoch_labels_pred_long == j))
+            tab[i, j] = np.sum((epoch_labels_pred_long == i) & (epoch_labels_long == j))
 
     return model, epoch_loss, epoch_accuracy, tab
 
@@ -221,7 +222,7 @@ def validate_epoch(dataloader, model, config):
 
     for i in unique_labels:
         for j in unique_labels:
-            tab[i, j] = np.sum((epoch_labels_long == i) & (epoch_labels_pred_long == j))
+            tab[i, j] = np.sum((epoch_labels_pred_long == i) & (epoch_labels_long == j))
 
     return epoch_loss, epoch_accuracy, tab
 

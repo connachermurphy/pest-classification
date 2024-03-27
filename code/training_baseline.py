@@ -7,6 +7,6 @@ config.seed = 123
 config.num_epochs = 30
 config.lr = 1e-4
 config.batch_size = 128
-config.name = "baseline_220318"
+config.name = "baseline_220327"
 
 train.training_run(config)
