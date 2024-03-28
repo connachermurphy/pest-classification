@@ -86,6 +86,10 @@ def cross_validation(config):
     # Create directory
     os.mkdir(path_out)
 
+    # Save index to name file
+    with open(os.path.join(path_out, "index_to_name.json"), "w") as f:
+        json.dump(pest.crop_descriptions["Maize"], f)
+
     # Report configuration
     config_dict = {key: value for key, value in vars(config).items() if not key.startswith("__")}
 
@@ -167,22 +171,6 @@ def cross_validation(config):
         np.savetxt(os.path.join(path_out, f"fold_{fold}_valid_loss_history.txt"), valid_loss_history, delimiter=",")
         np.savetxt(os.path.join(path_out, f"fold_{fold}_valid_accuracy_history.txt"), valid_accuracy_history, delimiter=",")
 
-        # plt.plot(train_loss_history, label="Training")
-        # plt.plot(valid_loss_history, label="Validation")
-        # plt.xlabel("Epoch")
-        # plt.ylabel("Loss")
-        # plt.legend()
-        # plt.savefig(os.path.join(path_out, f"fold_{fold}_loss.png"))
-        # plt.close()
-
-        # plt.plot(train_accuracy_history, label="Training")
-        # plt.plot(valid_accuracy_history, label="Validation")
-        # plt.xlabel("Epoch")
-        # plt.ylabel("Accuracy")
-        # plt.legend()
-        # plt.savefig(os.path.join(path_out, f"fold_{fold}_accuracy.png"))
-        # plt.close()
-
         end_fold = time.time()
         elapsed_fold = (end_fold - start_fold) / 60
         print("Fold {} completed in {:,.0f} minutes".format(fold, elapsed_fold))
@@ -263,6 +251,12 @@ def summarize(name):
     fig_all.savefig(os.path.join(path_out, "all_history.png"))
     fig_avg.tight_layout()
     fig_avg.savefig(os.path.join(path_out, "avg_history.png"))
+    
+    # Load index to name file
+    with open(os.path.join(path_out, "index_to_name.json"), "r") as file:
+        index_to_name = json.load(file)
+
+    print(index_to_name)
 
     # Load tabulations
     for sample in ["train", "valid"]:
@@ -271,7 +265,17 @@ def summarize(name):
                 with open(os.path.join(path_out, f"fold_{fold}_epoch_{config_dict['num_epochs'] - 1}_tab_{sample}.txt"), "r") as file:
                     tab = np.loadtxt(file, delimiter=",")
 
-                    print(tab)
+                    sum_pred = np.diag(tab) / np.sum(tab, axis=1)
+                    sum_label = np.diag(tab) / np.sum(tab, axis=0)
+
+                    tab_str = np.array([["%.0f" % num for num in row] for row in tab])
+                    sum_pred_str = np.array(['%.3f' % num for num in sum_pred])
+                    sum_label_str = np.array(['%.3f' % num for num in sum_label])
+                    sum_label_str = np.append(sum_label_str, "")
+
+                    tab_str = np.vstack((np.column_stack((tab_str, sum_pred_str)), sum_label_str))
+
+                    np.savetxt(os.path.join(path_out, f"fold_{fold}_tab_{sample}.txt"), tab_str, delimiter=",", fmt="%s")
 
 
 if __name__ == "__main__":
