@@ -257,12 +257,40 @@ def summarize(name):
         index_to_name = json.load(file)
     labels = ["[" + index_to_name[str(i)] + "]" for i in range(len(index_to_name))]
 
-    # Load tabulations
-    for sample in ["train", "valid"]:
-        for stat in ["loss", "accuracy"]:
+    with open(os.path.join(path_out, "summary.typ"), "w") as file:
+        file.write(
+            f"""
+            #import "@preview/tablex:0.0.8": tablex, cellx, hlinex, vlinex
+
+            Cross-validation summary: `{name}`\n
+
+            Configuration: {config_dict}
+            """
+            )
+
+        # All epoch history plots
+        file.write(
+            """
+            #figure(caption: "Loss and accuracy histories")[
+                #image(\"all_history.png\")
+            ]\n
+            """
+        )
+
+        # Average epoch history plots
+        file.write(
+            """
+            #figure(caption: "Average loss and accuracy histories")[
+                #image(\"avg_history.png\")
+            ]\n
+            """
+        )
+
+        # Load tabulations
+        for sample in ["train", "valid"]:
             for fold in range(config_dict["n_folds"]):
-                with open(os.path.join(path_out, f"fold_{fold}_epoch_{config_dict['num_epochs'] - 1}_tab_{sample}.txt"), "r") as file:
-                    tab = np.loadtxt(file, delimiter=",")
+                with open(os.path.join(path_out, f"fold_{fold}_epoch_{config_dict['num_epochs'] - 1}_tab_{sample}.txt"), "r") as file_tab:
+                    tab = np.loadtxt(file_tab, delimiter=",")
 
                     sum_pred = np.diag(tab) / np.sum(tab, axis=1)
                     sum_label = np.diag(tab) / np.sum(tab, axis=0)
@@ -276,44 +304,25 @@ def summarize(name):
                     tab_str = np.vstack((labels + ["vlinex(),[],hlinex()"], tab_str))
                     tab_str = np.column_stack((["[],vlinex()"] + labels + ["hlinex(),[]"], tab_str, np.repeat("", tab_str.shape[0])))
 
-                    np.savetxt(os.path.join(path_out, f"fold_{fold}_tab_{sample}.txt"), tab_str, delimiter=",", fmt="%s")
+                    file.write(
+                        f"""
+                        #figure(caption: "Tabulation, Fold {fold}, {sample}", tablex(
+                            columns: 9,
+                            align: center + horizon,
+                            auto-vlines: false,
+                            auto-hlines: false,
+                            header-rows: 1,
+                        """
+                    )
 
-    # Create typst summary
-    # CM: placeholder
+                    for row in tab_str:
+                        file.write(",".join(row) + "\n")
 
-# #include("table.typ");
-
-# #figure(caption: "Tabulation", tablex(
-#             columns: 9, // columns: (auto, 1em, 1fr, 1fr),
-#             align: center + horizon,
-#             auto-vlines: false,
-#             auto-hlines: false,
-
-#             header-rows: 1,
-# [],vlinex(),[fall armyworm],[grasshopper],[healthy],[leaf beetle],[leaf blight],[leaf spot],[streak virus],vlinex(),[],hlinex(),
-# [fall armyworm],172,0,0,1,3,3,5,0.935,
-# [grasshopper],1,413,1,2,0,0,1,0.988,
-# [healthy],0,0,121,0,0,18,0,0.871,
-# [leaf beetle],3,6,0,575,3,2,3,0.971,
-# [leaf blight],1,0,0,0,525,65,17,0.863,
-# [leaf spot],5,1,6,7,89,678,30,0.831,
-# [streak virus],2,0,3,0,15,19,557,0.935,
-# hlinex(),[],0.935,0.983,0.924,0.983,0.827,0.864,0.909,[],
-
-
-
-#     ))<fig:prod-cf>
-
-# Another attempt
-
-#let results = read("validation_results/baseline_220328/fold_0_tab_train.txt")
-
-# // #table(
-# //   columns: 2,
-# //   [*Condition*], [*Result*],
-# //   ..results.flatten(),
-# // )
-
+                    file.write(
+                        """
+                        ))
+                        """
+                    )
 
 
 if __name__ == "__main__":

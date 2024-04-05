@@ -37,7 +37,7 @@ The data include labelled images of corn, cassava, maize, and tomatoes. We use o
 We begin with a pre-trained instance of `resnet18`. We then conduct further training for each crop. We adopt a cross entropy loss function.
 
 = Cross-Validation Exercises
-We consider the selection of hyperparameters through 5-fold cross-validation.
+We consider the selection of hyperparameters through cross-validation. We provide summary statistics in `validation_summary.pdf`.
 
 = Deployment Training
 The live version of `CroPP` is trained with
