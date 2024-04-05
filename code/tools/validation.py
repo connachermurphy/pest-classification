@@ -255,8 +255,7 @@ def summarize(name):
     # Load index to name file
     with open(os.path.join(path_out, "index_to_name.json"), "r") as file:
         index_to_name = json.load(file)
-
-    print(index_to_name)
+    labels = ["[" + index_to_name[str(i)] + "]" for i in range(len(index_to_name))]
 
     # Load tabulations
     for sample in ["train", "valid"]:
@@ -271,11 +270,50 @@ def summarize(name):
                     tab_str = np.array([["%.0f" % num for num in row] for row in tab])
                     sum_pred_str = np.array(['%.3f' % num for num in sum_pred])
                     sum_label_str = np.array(['%.3f' % num for num in sum_label])
-                    sum_label_str = np.append(sum_label_str, "")
+                    sum_label_str = np.append(sum_label_str, "[]")
 
                     tab_str = np.vstack((np.column_stack((tab_str, sum_pred_str)), sum_label_str))
+                    tab_str = np.vstack((labels + ["vlinex(),[],hlinex()"], tab_str))
+                    tab_str = np.column_stack((["[],vlinex()"] + labels + ["hlinex(),[]"], tab_str, np.repeat("", tab_str.shape[0])))
 
                     np.savetxt(os.path.join(path_out, f"fold_{fold}_tab_{sample}.txt"), tab_str, delimiter=",", fmt="%s")
+
+    # Create typst summary
+    # CM: placeholder
+
+# #include("table.typ");
+
+# #figure(caption: "Tabulation", tablex(
+#             columns: 9, // columns: (auto, 1em, 1fr, 1fr),
+#             align: center + horizon,
+#             auto-vlines: false,
+#             auto-hlines: false,
+
+#             header-rows: 1,
+# [],vlinex(),[fall armyworm],[grasshopper],[healthy],[leaf beetle],[leaf blight],[leaf spot],[streak virus],vlinex(),[],hlinex(),
+# [fall armyworm],172,0,0,1,3,3,5,0.935,
+# [grasshopper],1,413,1,2,0,0,1,0.988,
+# [healthy],0,0,121,0,0,18,0,0.871,
+# [leaf beetle],3,6,0,575,3,2,3,0.971,
+# [leaf blight],1,0,0,0,525,65,17,0.863,
+# [leaf spot],5,1,6,7,89,678,30,0.831,
+# [streak virus],2,0,3,0,15,19,557,0.935,
+# hlinex(),[],0.935,0.983,0.924,0.983,0.827,0.864,0.909,[],
+
+
+
+#     ))<fig:prod-cf>
+
+# Another attempt
+
+#let results = read("validation_results/baseline_220328/fold_0_tab_train.txt")
+
+# // #table(
+# //   columns: 2,
+# //   [*Condition*], [*Result*],
+# //   ..results.flatten(),
+# // )
+
 
 
 if __name__ == "__main__":

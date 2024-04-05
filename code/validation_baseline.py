@@ -10,5 +10,5 @@ config.batch_size = 128
 config.n_folds = 5
 config.name = "baseline_220328"
 
-valid.cross_validation(config)
-# valid.summarize(config.name)
+# valid.cross_validation(config)
+valid.summarize(config.name)

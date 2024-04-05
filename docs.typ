@@ -1,4 +1,5 @@
 #import("typst/template_paper.typ"): *
+#import "@preview/tablex:0.0.5": tablex, cellx, hlinex, vlinex
 
 // #set math.equation(numbering: "(1)")
 // #set figure.caption(position: top)
