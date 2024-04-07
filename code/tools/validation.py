@@ -223,13 +223,16 @@ def summarize(name):
     
     # Process loss and accuracy histories
     k = 0
+    end_values = {}
 
     for sample in ["train", "valid"]:
         for stat in ["loss", "accuracy"]:
+
             k_1 = k // 2
             k_2 = k % 2
             k += 1
 
+            end_values[f"{stat}_{sample}"] = []
             avg = []
 
             for fold in range(config_dict["n_folds"]):
@@ -239,6 +242,9 @@ def summarize(name):
                 # Plot loss and accuracy histories
                 ax_all[k_1, k_2].plot(history, label=f"Fold {fold}")
                 avg.append(history)
+
+                # Add to table
+                end_values[f"{stat}_{sample}"].append(history[-1])
     
             ax_all[k_1, k_2].legend()
 
@@ -255,38 +261,74 @@ def summarize(name):
     # Load index to name file
     with open(os.path.join(path_out, "index_to_name.json"), "r") as file:
         index_to_name = json.load(file)
-    labels = ["[" + index_to_name[str(i)] + "]" for i in range(len(index_to_name))]
 
+    # Load abbreviations
+    with open("abbrev.json", "r") as file:
+        abbrev = json.load(file)
+
+    labels = ["[`" + abbrev[index_to_name[str(i)]] + "`]" for i in range(len(index_to_name))]
+
+    # Write summary to Typst
     with open(os.path.join(path_out, "summary.typ"), "w") as file:
         file.write(
-            f"""
-            #import "@preview/tablex:0.0.8": tablex, cellx, hlinex, vlinex
+            "#import \"@preview/tablex:0.0.8\": tablex, cellx, hlinex, vlinex, colspanx, rowspanx\n\n"
+            "Configuration\n"
+            f"- Name: `{config_dict['name']}`\n"
+            f"- Number of epochs: `{config_dict['num_epochs']}`\n"
+            f"- Learning rate: `{config_dict['lr']}`\n"
+            f"- Batch size: `{config_dict['batch_size']}`\n"
+            f"- Number of folds: `{config_dict['n_folds']}`\n"
+            f"- Seed: `{config_dict['seed']}`\n"
+        )
 
-            Cross-validation summary: `{name}`\n
-
-            Configuration: {config_dict}
-            """
-            )
-
-        # All epoch history plots
         file.write(
+            """#figure(
+                caption: "Final Epoch Metrics", tablex(
+                columns: 5,
+                align: center + horizon,
+                auto-vlines: false,
+                auto-hlines: false,
+                header-rows: 1,
+                rowspanx(2)[Fold],vlinex(),colspanx(2)[Loss],vlinex(),colspanx(2)[Accuracy],
+                [Train],[Validation],[Train],[Validation],hlinex(),
             """
-            #figure(caption: "Loss and accuracy histories")[
+        )
+
+        for fold in range(config_dict["n_folds"]):
+            file.write(f"{fold},")
+            file.write(f"{end_values['loss_train'][fold]:.3f},")
+            file.write(f"{end_values['loss_valid'][fold]:.3f},")
+            file.write(f"{end_values['accuracy_train'][fold]:.3f},")
+            file.write(f"{end_values['accuracy_valid'][fold]:.3f},\n")
+
+        file.write("))\n")
+
+        # All folds history plots
+        file.write(
+            
+            """#figure(
+                caption: "Loss and Accuracy Histories, All Folds",
+            )[
                 #image(\"all_history.png\")
-            ]\n
-            """
+            ]\n"""
         )
 
-        # Average epoch history plots
+        # Average fold history plots
         file.write(
-            """
-            #figure(caption: "Average loss and accuracy histories")[
+            """#figure(
+                caption: "Loss and Accuracy Histories, Average",
+            )[
                 #image(\"avg_history.png\")
-            ]\n
-            """
+            ]\n"""
         )
 
-        # Load tabulations
+        # Abbreviations
+        file.write("Abbreviations:\n")
+        [file.write(
+            "- `" + abbrev[index_to_name[str(i)]] + "`: " + index_to_name[str(i)] + "\n"
+        ) for i in range(len(index_to_name))]
+
+        # Tabulations
         for sample in ["train", "valid"]:
             for fold in range(config_dict["n_folds"]):
                 with open(os.path.join(path_out, f"fold_{fold}_epoch_{config_dict['num_epochs'] - 1}_tab_{sample}.txt"), "r") as file_tab:
@@ -305,8 +347,8 @@ def summarize(name):
                     tab_str = np.column_stack((["[],vlinex()"] + labels + ["hlinex(),[]"], tab_str, np.repeat("", tab_str.shape[0])))
 
                     file.write(
-                        f"""
-                        #figure(caption: "Tabulation, Fold {fold}, {sample}", tablex(
+                        f"""#figure(
+                            caption: "Tabulation, Fold {fold}, {sample}", tablex(
                             columns: 9,
                             align: center + horizon,
                             auto-vlines: false,
@@ -318,11 +360,7 @@ def summarize(name):
                     for row in tab_str:
                         file.write(",".join(row) + "\n")
 
-                    file.write(
-                        """
-                        ))
-                        """
-                    )
+                    file.write("))")
 
 
 if __name__ == "__main__":
