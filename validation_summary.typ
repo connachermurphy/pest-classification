@@ -13,5 +13,6 @@
 
 This document contains results from cross-validation exercises.
 
-= Summary: `baseline_220328`
-#include("validation_results/baseline_220328/summary.typ")
+#let name = "baseline_220407"
+= Summary: #name
+#include("validation_results/" + name + "/summary.typ")

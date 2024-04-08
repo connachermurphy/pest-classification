@@ -329,8 +329,13 @@ def summarize(name):
         ) for i in range(len(index_to_name))]
 
         # Tabulations
-        for sample in ["train", "valid"]:
-            for fold in range(config_dict["n_folds"]):
+        for fold in range(config_dict["n_folds"]):
+            for sample in ["train", "valid"]:
+                if sample == "train":
+                    sample_name = "Train"
+                else:
+                    sample_name = "Validation"
+            
                 with open(os.path.join(path_out, f"fold_{fold}_epoch_{config_dict['num_epochs'] - 1}_tab_{sample}.txt"), "r") as file_tab:
                     tab = np.loadtxt(file_tab, delimiter=",")
 
@@ -338,22 +343,24 @@ def summarize(name):
                     sum_label = np.diag(tab) / np.sum(tab, axis=0)
 
                     tab_str = np.array([["%.0f" % num for num in row] for row in tab])
-                    sum_pred_str = np.array(['%.3f' % num for num in sum_pred])
-                    sum_label_str = np.array(['%.3f' % num for num in sum_label])
+                    sum_pred_str = np.array([f"\"{num:0.3f}\"" for num in sum_pred])
+                    sum_label_str = np.array([f"\"{num:0.3f}\"" for  num in sum_label])
                     sum_label_str = np.append(sum_label_str, "[]")
 
                     tab_str = np.vstack((np.column_stack((tab_str, sum_pred_str)), sum_label_str))
-                    tab_str = np.vstack((labels + ["vlinex(),[],hlinex()"], tab_str))
-                    tab_str = np.column_stack((["[],vlinex()"] + labels + ["hlinex(),[]"], tab_str, np.repeat("", tab_str.shape[0])))
+                    tab_str = np.vstack((labels + ["[Recall],hlinex()"], tab_str))
+                    # tab_str = np.column_stack((["[Label],vlinex()"] + labels + ["hlinex(),[Precision]"], tab_str, np.repeat("", tab_str.shape[0])))
+                    tab_str = np.column_stack((["[Label]"] + labels + ["hlinex(),[Precision]"], tab_str, np.repeat("", tab_str.shape[0])))
 
                     file.write(
                         f"""#figure(
-                            caption: "Tabulation, Fold {fold}, {sample}", tablex(
+                            caption: "Confusion Matrix, Fold {fold}, {sample_name}", tablex(
                             columns: 9,
                             align: center + horizon,
                             auto-vlines: false,
                             auto-hlines: false,
                             header-rows: 1,
+                            [],vlinex(),colspanx(7)[Prediction],vlinex(),[],
                         """
                     )
 
